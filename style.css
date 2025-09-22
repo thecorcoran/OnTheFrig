@@ -1,0 +1,204 @@
+/* --- General Styles --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* --- Input & Controls Section --- */
+.controls {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+}
+
+.controls h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+input[type="text"], input[type="date"], select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Important for consistent sizing */
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    height: 40px; /* Align with other inputs */
+}
+
+.checkbox-group input {
+    margin-right: 8px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#printBtn {
+    background-color: #28a745;
+    display: block;
+    margin: 20px auto;
+}
+#printBtn:hover {
+    background-color: #218838;
+}
+
+/* --- Printable Schedule Area --- */
+#printableArea {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#scheduleHeader {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#scheduleHeader h1, #scheduleHeader h2 {
+    margin: 0;
+}
+
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 15px;
+}
+
+.day-column {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.day-column h3 {
+    text-align: center;
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.time-block {
+    margin-bottom: 15px;
+}
+
+.time-block h4 {
+    margin: 0 0 8px 0;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.time-block ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 5px;
+}
+
+.time-block li {
+    background-color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+}
+
+.task-checkbox {
+    margin-right: 10px;
+    min-width: 15px; /* prevent layout shift */
+}
+
+.task-name {
+    flex-grow: 1;
+}
+
+/* --- Print Specific Styles --- */
+@media print {
+    @page {
+        size: letter landscape;
+        margin: 0.5in;
+    }
+
+    body {
+        background-color: #fff;
+        padding: 0;
+        margin: 0;
+    }
+
+    .controls, #printBtn {
+        display: none !important; /* Hide controls when printing */
+    }
+
+    .container, #printableArea {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+    }
+
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+    }
+
+    .day-column {
+        border: 1px solid #ccc;
+        padding: 5px;
+        page-break-inside: avoid; /* Try to keep columns from breaking across pages */
+    }
+
+    .time-block li {
+        box-shadow: none;
+        border: 1px solid #eee;
+    }
+}
