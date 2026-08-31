@@ -1,55 +1,69 @@
 # OnTheFrig - Weekly Schedule Planner
 
-A simple, printable weekly schedule planner designed to help organize tasks for children. This web-based tool allows a user to dynamically build a weekly schedule, assign tasks to specific days and times, and then print a clean, easy-to-read version to post on the fridge (or anywhere else!).
+A responsive, printable weekly schedule planner designed to organize homeschool tasks, chores, and daily routines for multiple children. Build weekly schedules, assign single or recurring tasks across days and time blocks, view historical logs of previous weeks, and print clean landscape sheets for the fridge.
 
-## Features
+---
 
-- **Dynamic Schedule Grid:** The schedule is visually organized into columns for each day of the week.
-- **Customizable Headers:** Set a custom name and week date for the schedule.
-- **Task Management:**
-    - Add tasks to specific days (Monday-Sunday).
-    - Assign tasks to time blocks (Morning, Lunch, Afternoon, Nighttime).
-    - Mark tasks as "Must-Do," which makes them appear bold for emphasis.
-- **Task History:** The application remembers previously entered task names to make re-entry faster.
-- **Print-Friendly:** A dedicated print button generates a clean, landscape-oriented version of the schedule, hiding all the input controls.
-- **Real-time Updates:** The schedule display updates instantly as you add tasks or change the header information.
+## Key Features
 
-## How to Use
+### 1. Multi-Child Profile Management
+* **Child Tabs:** Easily switch between different children (`[ Child 1 ] [ Child 2 ] [+ Add Child]`).
+* **Manage Profiles:** Add, rename, or delete child profiles at any time.
+* **Isolated Calendars:** Each child maintains their own independent weekly schedules and history.
 
-1.  Open the `index.html` file in any modern web browser.
-2.  **(Optional)** Enter the child's name and select the starting date for the week.
-3.  In the "Add a Task" section:
-    -   Enter the name of the task.
-    -   Select the day of the week.
-    -   Select the time of day.
-    -   Check the "Must-Do?" box if it's a high-priority task.
-4.  Click the **"Add Task"** button. The task will appear on the schedule grid below.
-5.  Repeat for all desired tasks.
-6.  When you are finished, click the **"Print Schedule"** button to open your browser's print dialog.
+### 2. Multi-Day & Recurring Tasks
+* **Flexible Day Selector:** Select any combination of days (e.g., Tuesday and Wednesday) using interactive day chips.
+* **Quick Presets:** One-click presets for **"Weekdays"** (Mon–Fri), **"Weekends"** (Sat–Sun), **"All Days"**, and **"Clear"**.
+* **Recurring Series Management:** Recurring tasks are linked. When deleting a recurring task, choose between deleting a single instance or the entire series.
+
+### 3. Historical Week Logging & Navigation
+* **Week-by-Week Navigation:** Browse past, current, and future weeks using `◀ Prev Week`, `Next Week ▶`, or the date picker (automatically normalized to Monday of that week).
+* **Historical Logs:** Past weeks remain saved in the log and can be referenced at any time.
+* **"Copy Last Week's Schedule":** Quickly populate the current week by copying forward tasks from the previous week with a single click.
+
+### 4. Data Persistence & Device Sharing
+* **Automatic Local Storage:** All child profiles, weekly schedules, task states, and autocomplete history persist in the browser (`localStorage`).
+* **Backup & Share:**
+  * **Export Backup:** Download a `.json` backup file of all child profiles and schedules.
+  * **Import Backup:** Restore or share schedules across devices by loading the backup file.
+
+### 5. Print & Mobile Ready
+* **Fridge-Ready Landscape Print:** Formatted via `@media print` to fit standard letter paper in landscape mode, hiding all buttons, tabs, and controls.
+* **Interactive Checkboxes:** Checkboxes can be ticked directly in the web app or checked off by hand with a pencil once printed.
+* **Responsive Design:** Columns and controls adapt cleanly to mobile screens and tablets.
+
+---
 
 ## Project Structure
 
 ```
 OnTheFrig/
-├── index.html      # The main HTML file with the page structure.
-├── style.css       # All styles for the application, including print-specific styles.
-└── script.js       # All JavaScript logic for state management, DOM manipulation, and event handling.
+├── index.html      # Main web application entry
+├── schedule.html   # HTML alias
+├── style.css       # Responsive styling, modern UI, and @media print layout
+└── script.js       # Core state management, localStorage persistence, and event handling
 ```
-
-## Technical Details
-
-- **Frontend:** Built with plain HTML, CSS, and vanilla JavaScript.
-- **State Management:** A simple `tasks` array in `script.js` holds the state of the schedule. The `renderSchedule()` function is called whenever the state changes to re-draw the UI.
-- **Styling:**
-    -   Uses CSS Grid Layout for both the input controls and the main schedule grid, providing a responsive and clean layout.
-    -   Includes a `@media print` query to heavily modify the styles for a clean, paper-friendly output.
-
-## Future Improvements
-
--   Allow tasks to be edited or deleted directly from the grid.
--   Persist the schedule data in the browser's `localStorage` so it isn't lost on page refresh.
--   Add the ability to re-order tasks within a time block.
 
 ---
 
-*This project was created as a simple, client-side tool with no external dependencies.*
+## How to Use
+
+1. **Open the App:** Open `index.html` in any web browser.
+2. **Select or Add a Child:** Click an existing tab or click `+ Add Child` to set up a new profile.
+3. **Navigate the Week:** Use `◀ Prev Week` / `Next Week ▶` or click `Current Week`.
+4. **Add Tasks:**
+   * Enter the task name (or choose from history suggestions).
+   * Choose the time of day (Morning, Lunch, Afternoon, Nighttime).
+   * Check "Must be done" if it's high priority.
+   * Select one or more days (or use quick presets).
+   * Click **"+ Add Task"**.
+5. **Copying from Last Week:** When starting a new week, click `📋 Copy Last Week's Schedule` to clone the previous week's tasks.
+6. **Print:** Click **"🖨️ Print Schedule"** to generate a clean, one-page printable landscape schedule.
+
+---
+
+## Hosting on the Web
+
+Because OnTheFrig is a pure client-side static web application with no server dependencies:
+* **GitHub Pages:** Push this repository to GitHub and enable GitHub Pages in repository settings for a free instant URL.
+* **Netlify / Vercel / Cloudflare Pages:** Drag-and-drop this project folder into Netlify Drop or connect your Git repository.
