@@ -12,20 +12,29 @@
         <!-- Controls & Planning Section (Hidden when printing) -->
         <div class="controls no-print">
             <div class="app-header">
-                <h2>Schedule Builder</h2>
-                <div class="backup-actions">
-                    <button type="button" id="exportDataBtn" class="btn-secondary-sm" title="Download a backup file of all children and schedules">📥 Export Backup</button>
-                    <label class="btn-secondary-sm btn-file-label" title="Import schedule data from a backup file">
-                        📤 Import Backup
-                        <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                    </label>
+                <div class="header-branding">
+                    <h2>Schedule Builder</h2>
+                    <span class="header-tagline">Organize routines, chores & homeschool</span>
+                </div>
+                <div class="header-actions">
+                    <div class="view-mode-toggle">
+                        <button type="button" id="viewWeeklyBtn" class="btn-mode active" title="Switch to 7-Day Weekly Grid">📅 Weekly Grid</button>
+                        <button type="button" id="viewEarlyReaderBtn" class="btn-mode" title="Switch to Picture-Card View for Early Readers">🧸 Early Reader Mode</button>
+                    </div>
+                    <div class="backup-actions">
+                        <button type="button" id="exportDataBtn" class="btn-secondary-sm" title="Download a backup file of all children and schedules">📥 Export Backup</button>
+                        <label class="btn-secondary-sm btn-file-label" title="Import schedule data from a backup file">
+                            📤 Import Backup
+                            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                        </label>
+                    </div>
                 </div>
             </div>
 
             <!-- 1. Child Selection / Profile Management -->
             <div class="child-management-section">
                 <div class="section-header">
-                    <label class="section-label">Select Child:</label>
+                    <label class="section-label">Select Child Profile:</label>
                     <div class="child-actions">
                         <button type="button" id="addChildBtn" class="btn-link">+ Add Child</button>
                         <button type="button" id="renameChildBtn" class="btn-link" title="Rename currently selected child">✏️ Rename</button>
@@ -66,25 +75,68 @@
                 <div class="input-grid">
                     <div class="form-group flex-2">
                         <label for="taskName">Task Name:</label>
-                        <input type="text" id="taskName" placeholder="e.g., Math Lesson, Piano Practice, Chores" list="taskHistory" autocomplete="off">
+                        <input type="text" id="taskName" placeholder="e.g., Brush Teeth, Morning Routine, Math Lesson, Piano" list="taskHistory" autocomplete="off">
                         <datalist id="taskHistory"></datalist>
                     </div>
 
                     <div class="form-group">
                         <label for="timeOfDay">Time of Day:</label>
                         <select id="timeOfDay">
-                            <option value="Morning">Morning</option>
-                            <option value="Lunch">Lunch</option>
-                            <option value="Afternoon">Afternoon</option>
-                            <option value="Nighttime">Nighttime</option>
+                            <option value="Morning">🌅 Morning</option>
+                            <option value="Lunch">🥪 Lunch</option>
+                            <option value="Afternoon">☀️ Afternoon</option>
+                            <option value="Nighttime">🌙 Nighttime</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label class="checkbox-label" for="isMustDo">
                             <input type="checkbox" id="isMustDo">
-                            <span>Must be done (High Priority)</span>
+                            <span>Must be done (High Priority ⭐)</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Early Reader Icon Selection -->
+                <div class="icon-selection-section">
+                    <div class="icon-header">
+                        <label class="section-label">
+                            Early Reader Visual Icon:
+                            <span class="icon-hint">Pictures help young children recognize their tasks</span>
+                        </label>
+                        <span id="autoIconBadge" class="auto-badge" title="Icon automatically detected from task name">✨ Auto-selected</span>
+                    </div>
+
+                    <div class="icon-picker-bar">
+                        <div class="selected-icon-preview" id="selectedIconPreview" title="Current selected icon">
+                            <span id="previewEmoji">🪥</span>
+                            <span class="preview-label">Active Icon</span>
+                        </div>
+
+                        <div class="quick-icons" id="quickIconsContainer">
+                            <!-- Popular Quick Icons -->
+                            <button type="button" class="icon-chip active" data-icon="🪥" title="Toothbrush">🪥</button>
+                            <button type="button" class="icon-chip" data-icon="🦷" title="Tooth">🦷</button>
+                            <button type="button" class="icon-chip" data-icon="🛏️" title="Make Bed">🛏️</button>
+                            <button type="button" class="icon-chip" data-icon="👕" title="Get Dressed">👕</button>
+                            <button type="button" class="icon-chip" data-icon="🧼" title="Wash Hands">🧼</button>
+                            <button type="button" class="icon-chip" data-icon="🛁" title="Bath / Shower">🛁</button>
+                            <button type="button" class="icon-chip" data-icon="🚽" title="Potty">🚽</button>
+                            <button type="button" class="icon-chip" data-icon="🎒" title="Pack Backpack">🎒</button>
+                            <button type="button" class="icon-chip" data-icon="📚" title="Reading / Books">📚</button>
+                            <button type="button" class="icon-chip" data-icon="✏️" title="Schoolwork / Writing">✏️</button>
+                            <button type="button" class="icon-chip" data-icon="🍎" title="Snack / Fruit">🍎</button>
+                            <button type="button" class="icon-chip" data-icon="🍽️" title="Eat Meal">🍽️</button>
+                            <button type="button" class="icon-chip" data-icon="🧸" title="Clean Up Toys">🧸</button>
+                            <button type="button" class="icon-chip" data-icon="🧹" title="Chore / Sweep">🧹</button>
+                            <button type="button" class="icon-chip" data-icon="🐕" title="Pet Care">🐕</button>
+                            <button type="button" class="icon-chip" data-icon="⚽" title="Play / Sports">⚽</button>
+                            <button type="button" class="icon-chip" data-icon="🎹" title="Music / Piano">🎹</button>
+                            <button type="button" class="icon-chip" data-icon="🌙" title="Bedtime">🌙</button>
+                            <button type="button" class="icon-chip" data-icon="⭐" title="Reward / Star">⭐</button>
+                            <button type="button" class="icon-chip" data-icon="" title="No Icon / Text Only">🚫 None</button>
+                            <button type="button" class="icon-chip-more" id="openMoreIconsBtn" title="Browse full icon categories">🎨 More Icons...</button>
+                        </div>
                     </div>
                 </div>
 
@@ -93,7 +145,7 @@
                     <label class="section-label">Select Day(s) for this Task:</label>
                     
                     <div class="day-chips" id="dayChipsContainer">
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Monday"><span>Mon</span></label>
+                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Monday" checked><span>Mon</span></label>
                         <label class="day-chip"><input type="checkbox" name="taskDay" value="Tuesday"><span>Tue</span></label>
                         <label class="day-chip"><input type="checkbox" name="taskDay" value="Wednesday"><span>Wed</span></label>
                         <label class="day-chip"><input type="checkbox" name="taskDay" value="Thursday"><span>Thu</span></label>
@@ -104,10 +156,10 @@
 
                     <div class="day-presets">
                         <span class="preset-label">Quick select:</span>
-                        <button type="button" class="btn-preset" id="presetWeekdays">Weekdays</button>
-                        <button type="button" class="btn-preset" id="presetWeekends">Weekends</button>
-                        <button type="button" class="btn-preset" id="presetEveryday">All Days</button>
-                        <button type="button" class="btn-preset" id="presetClearDays">Clear</button>
+                        <button type="button" class="btn-preset" id="presetWeekdays">Weekdays (Mon-Fri)</button>
+                        <button type="button" class="btn-preset" id="presetWeekends">Weekends (Sat-Sun)</button>
+                        <button type="button" class="btn-preset" id="presetEveryday">All 7 Days</button>
+                        <button type="button" class="btn-preset" id="presetClearDays">Clear Days</button>
                     </div>
                 </div>
 
@@ -117,8 +169,8 @@
             </div>
         </div>
 
-        <!-- Printable Schedule Grid -->
-        <div id="printableArea">
+        <!-- VIEW 1: Printable 7-Day Schedule Grid -->
+        <div id="printableArea" class="schedule-view">
             <div id="scheduleHeader">
                 <h1 id="displayName">Child's Schedule</h1>
                 <h2 id="displayDate">Week of...</h2>
@@ -127,10 +179,105 @@
                 <!-- Dynamically populated day columns -->
             </div>
         </div>
+
+        <!-- VIEW 2: Early Reader Picture Routine Board -->
+        <div id="earlyReaderView" class="schedule-view" style="display: none;">
+            <div class="reader-board-header">
+                <div class="reader-header-info">
+                    <h1 id="readerDisplayName">Child's Daily Routine</h1>
+                    <div class="reader-subhead">
+                        <span id="readerDisplayDate">Today's Picture Routine</span>
+                        <span class="early-reader-badge">🧸 Early Reader Visual Board</span>
+                    </div>
+                </div>
+                
+                <!-- Day selector for Early Reader View -->
+                <div class="reader-day-selector no-print" id="readerDaySelector">
+                    <!-- Monday .. Sunday tabs -->
+                </div>
+            </div>
+
+            <div class="reader-routine-container" id="readerRoutineContainer">
+                <!-- Dynamically populated Time of Day picture cards -->
+            </div>
+        </div>
         
         <!-- Print Action -->
         <div class="print-action-bar no-print">
             <button id="printBtn" class="btn-print">🖨️ Print Schedule</button>
+            <span class="print-hint" id="printHint">Fits cleanly onto landscape letter paper for your fridge</span>
+        </div>
+    </div>
+
+    <!-- More Icons Modal -->
+    <div id="iconModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Select an Early Reader Icon</h3>
+                <button type="button" id="closeIconModalBtn" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body" id="iconCategoriesContainer">
+                <!-- Populated dynamically with categorized emoji sets -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Task</h3>
+                <button type="button" id="closeEditModalBtn" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editTaskName">Task Name:</label>
+                    <input type="text" id="editTaskName">
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label for="editTimeOfDay">Time of Day:</label>
+                    <select id="editTimeOfDay">
+                        <option value="Morning">🌅 Morning</option>
+                        <option value="Lunch">🥪 Lunch</option>
+                        <option value="Afternoon">☀️ Afternoon</option>
+                        <option value="Nighttime">🌙 Nighttime</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label>Task Icon:</label>
+                    <div class="edit-icon-picker" id="editIconPicker">
+                        <!-- Quick icons in edit dialog -->
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label class="checkbox-label" for="editIsMustDo">
+                        <input type="checkbox" id="editIsMustDo">
+                        <span>Must be done (High Priority ⭐)</span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="saveEditTaskBtn" class="btn-primary">Save Changes</button>
+                    <button type="button" id="cancelEditTaskBtn" class="btn-tool">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safe Delete Confirmation Modal (Prevents accidental deletions) -->
+    <div id="deleteModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3>Delete Recurring Task</h3>
+                <button type="button" id="closeDeleteModalBtn" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteModalMessage">This task occurs on multiple days this week. How would you like to delete it?</p>
+                <div class="delete-modal-actions">
+                    <button type="button" id="deleteSeriesBtn" class="btn-tool btn-tool-danger">Delete All Days This Week</button>
+                    <button type="button" id="deleteSingleBtn" class="btn-tool">Delete Only This Day</button>
+                    <button type="button" id="cancelDeleteModalBtn" class="btn-secondary-sm">Cancel (Keep Task)</button>
+                </div>
+            </div>
         </div>
     </div>
 
