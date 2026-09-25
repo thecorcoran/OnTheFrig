@@ -34,7 +34,7 @@
             <!-- 1. Child Selection / Profile Management -->
             <div class="child-management-section">
                 <div class="section-header">
-                    <label class="section-label">Select Child Profile:</label>
+                    <label class="section-label">Select Child Profile to View:</label>
                     <div class="child-actions">
                         <button type="button" id="addChildBtn" class="btn-link">+ Add Child</button>
                         <button type="button" id="renameChildBtn" class="btn-link" title="Rename currently selected child">✏️ Rename</button>
@@ -137,6 +137,23 @@
                             <button type="button" class="icon-chip" data-icon="" title="No Icon / Text Only">🚫 None</button>
                             <button type="button" class="icon-chip-more" id="openMoreIconsBtn" title="Browse full icon categories">🎨 More Icons...</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Child Assignment Section -->
+                <div class="child-assign-section" id="childAssignSection">
+                    <div class="assign-header">
+                        <label class="section-label">
+                            Assign Task To:
+                            <span class="icon-hint">Add this task to one child or all children simultaneously</span>
+                        </label>
+                        <div class="child-assign-presets">
+                            <button type="button" class="btn-preset" id="presetActiveChildOnly">Active Child Only</button>
+                            <button type="button" class="btn-preset" id="presetAllChildren">👥 All Children</button>
+                        </div>
+                    </div>
+                    <div class="child-assign-chips" id="childAssignChipsContainer">
+                        <!-- Dynamically populated checkboxes for each child -->
                     </div>
                 </div>
 

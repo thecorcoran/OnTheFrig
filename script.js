@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Keyword to icon auto-detection map
     const AUTO_ICON_KEYWORDS = [
-        { keywords: ['brush', 'teeth', 'toothbrush', 'brush teeth'], icon: '🪥' },
+        { keywords: ['brush', 'teeth', 'toothbrush', 'brush teeth', 'brushing teeth'], icon: '🪥' },
         { keywords: ['tooth', 'dentist', 'floss'], icon: '🦷' },
         { keywords: ['bed', 'make bed', 'sheets'], icon: '🛏️' },
         { keywords: ['dress', 'dressed', 'clothes', 'pajama', 'pajamas', 'outfit'], icon: '👕' },
@@ -156,6 +156,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const quickIconsContainer = document.getElementById('quickIconsContainer');
     const openMoreIconsBtn = document.getElementById('openMoreIconsBtn');
 
+    const childAssignChipsContainer = document.getElementById('childAssignChipsContainer');
+    const presetActiveChildOnlyBtn = document.getElementById('presetActiveChildOnly');
+    const presetAllChildrenBtn = document.getElementById('presetAllChildren');
+
     const presetWeekdaysBtn = document.getElementById('presetWeekdays');
     const presetWeekendsBtn = document.getElementById('presetWeekends');
     const presetEverydayBtn = document.getElementById('presetEveryday');
@@ -238,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getTodayDayName() {
         const dayIndex = new Date().getDay();
-        // 0 is Sunday, 1 is Monday ... 6 is Saturday
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         return dayNames[dayIndex];
     }
@@ -265,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
             autoIconBadge.style.display = 'none';
         }
 
-        // Highlight chip in quick icons
         const chips = quickIconsContainer.querySelectorAll('.icon-chip');
         chips.forEach(chip => {
             if (chip.getAttribute('data-icon') === icon) {
@@ -372,15 +374,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return state.children.find(c => c.id === state.activeChildId) || state.children[0];
     }
 
+    function getChildWeekTasks(childId) {
+        if (!state.schedules[childId]) {
+            state.schedules[childId] = {};
+        }
+        if (!state.schedules[childId][state.selectedWeek]) {
+            state.schedules[childId][state.selectedWeek] = [];
+        }
+        return state.schedules[childId][state.selectedWeek];
+    }
+
     function getCurrentWeekTasks() {
         const activeChild = getActiveChild();
-        if (!state.schedules[activeChild.id]) {
-            state.schedules[activeChild.id] = {};
-        }
-        if (!state.schedules[activeChild.id][state.selectedWeek]) {
-            state.schedules[activeChild.id][state.selectedWeek] = [];
-        }
-        return state.schedules[activeChild.id][state.selectedWeek];
+        return getChildWeekTasks(activeChild.id);
     }
 
     function setCurrentWeekTasks(tasks) {
@@ -404,9 +410,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 state.activeChildId = child.id;
                 saveState();
                 renderAll();
+                syncChildAssignChips();
             });
             childTabsContainer.appendChild(tabBtn);
         });
+    }
+
+    function renderChildAssignChips() {
+        childAssignChipsContainer.innerHTML = '';
+        state.children.forEach(child => {
+            const label = document.createElement('label');
+            label.className = 'child-assign-chip';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'assignChild';
+            checkbox.value = child.id;
+            checkbox.checked = (child.id === state.activeChildId);
+
+            const span = document.createElement('span');
+            span.textContent = child.name;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            childAssignChipsContainer.appendChild(label);
+        });
+    }
+
+    function syncChildAssignChips() {
+        const checkboxes = document.querySelectorAll('input[name="assignChild"]');
+        if (checkboxes.length === 0) {
+            renderChildAssignChips();
+            return;
+        }
+        // Update active child default if only one was selected
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        if (checkedCount <= 1) {
+            checkboxes.forEach(cb => {
+                cb.checked = (cb.value === state.activeChildId);
+            });
+        }
     }
 
     function updateTaskHistoryDatalist() {
@@ -473,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         taskIconSpan.className = 'task-icon';
                         taskIconSpan.textContent = task.icon || '⭐';
 
-                        // Task text
+                        // Task text (with clean unfragmented wrapping)
                         const taskNameSpan = document.createElement('span');
                         taskNameSpan.className = 'task-name';
                         if (task.mustDo) {
@@ -488,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             taskNameSpan.textContent = task.name;
                         }
 
-                        // Action Buttons (Edit & Delete)
+                        // Action Buttons (Edit & Delete - overlay on hover)
                         const actionDiv = document.createElement('div');
                         actionDiv.className = 'task-item-actions no-print';
 
@@ -567,11 +610,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const dayTasks = currentTasks.filter(t => t.day === selectedDay);
         readerRoutineContainer.innerHTML = '';
 
-        let totalTasksCount = 0;
-
         TIME_BLOCKS.forEach(block => {
             const blockTasks = dayTasks.filter(t => t.time === block);
-            totalTasksCount += blockTasks.length;
 
             const blockCard = document.createElement('div');
             blockCard.className = `reader-block-card time-${block}`;
@@ -604,12 +644,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cardItem = document.createElement('div');
                     cardItem.className = `reader-card-item ${task.completed ? 'completed' : ''}`;
 
-                    // Large picture icon
                     const iconBox = document.createElement('div');
                     iconBox.className = 'reader-card-icon';
                     iconBox.textContent = task.icon || '⭐';
 
-                    // Text & Priority
                     const contentBox = document.createElement('div');
                     contentBox.className = 'reader-card-content';
 
@@ -626,11 +664,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         contentBox.appendChild(tag);
                     }
 
-                    // Actions: Speak Aloud & Checkmark
                     const actionsBox = document.createElement('div');
                     actionsBox.className = 'reader-card-actions';
 
-                    // Read Aloud Text-To-Speech Button
                     const speakBtn = document.createElement('button');
                     speakBtn.type = 'button';
                     speakBtn.className = 'btn-speak no-print';
@@ -641,7 +677,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         speakTask(task.name, block);
                     });
 
-                    // Big tactile checkmark box
                     const checkMark = document.createElement('div');
                     checkMark.className = 'reader-big-check';
                     checkMark.textContent = task.completed ? '✓' : '';
@@ -653,7 +688,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     cardItem.appendChild(contentBox);
                     cardItem.appendChild(actionsBox);
 
-                    // Clicking the whole card toggles completion
                     cardItem.addEventListener('click', () => {
                         toggleTaskCompleted(task.id);
                     });
@@ -671,11 +705,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Read Aloud Speech Synthesis
     function speakTask(taskName, blockTime) {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // Stop prior speech
+            window.speechSynthesis.cancel();
             const textToSay = `${taskName}`;
             const utterance = new SpeechSynthesisUtterance(textToSay);
-            utterance.rate = 0.9; // Slightly slower for kids
-            utterance.pitch = 1.1; // Friendly tone
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
             window.speechSynthesis.speak(utterance);
         }
     }
@@ -702,6 +736,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderAll() {
         renderChildTabs();
+        renderChildAssignChips();
         updateTaskHistoryDatalist();
         if (state.activeView === 'early_reader') {
             switchViewMode('early_reader');
@@ -824,6 +859,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function getSelectedAssignChildren() {
+        const selected = [];
+        const checkboxes = document.querySelectorAll('input[name="assignChild"]');
+        checkboxes.forEach(cb => {
+            if (cb.checked) selected.push(cb.value);
+        });
+        // Fallback to active child if none selected
+        if (selected.length === 0) {
+            selected.push(state.activeChildId);
+        }
+        return selected;
+    }
+
     function addTask() {
         const name = taskNameInput.value.trim();
         if (!name) {
@@ -838,25 +886,39 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const targetChildIds = getSelectedAssignChildren();
+        if (targetChildIds.length === 0) {
+            alert('Please select at least one child to assign this task to.');
+            return;
+        }
+
         const time = timeOfDaySelect.value;
         const mustDo = isMustDoCheckbox.checked;
         const icon = state.selectedTaskIcon || detectIconForTask(name);
         const isRecurring = selectedDays.length > 1;
-        const recurringGroupId = isRecurring ? `rec_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` : null;
 
-        const currentTasks = getCurrentWeekTasks();
+        // Add task for each selected child
+        targetChildIds.forEach((childId) => {
+            const childTasks = getChildWeekTasks(childId);
+            const recurringGroupId = isRecurring ? `rec_${Date.now()}_${childId}_${Math.random().toString(36).substr(2, 5)}` : null;
 
-        selectedDays.forEach((day, idx) => {
-            currentTasks.push({
-                id: `task_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
-                name: name,
-                icon: icon,
-                day: day,
-                time: time,
-                mustDo: mustDo,
-                completed: false,
-                recurringGroupId: recurringGroupId
+            selectedDays.forEach((day, idx) => {
+                childTasks.push({
+                    id: `task_${Date.now()}_${childId}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+                    name: name,
+                    icon: icon,
+                    day: day,
+                    time: time,
+                    mustDo: mustDo,
+                    completed: false,
+                    recurringGroupId: recurringGroupId
+                });
             });
+
+            if (!state.schedules[childId]) {
+                state.schedules[childId] = {};
+            }
+            state.schedules[childId][state.selectedWeek] = childTasks;
         });
 
         if (!state.taskHistory.includes(name)) {
@@ -948,7 +1010,6 @@ document.addEventListener('DOMContentLoaded', function() {
         editTimeOfDay.value = task.time;
         editIsMustDo.checked = !!task.mustDo;
 
-        // Populate edit icon picker
         editIconPicker.innerHTML = '';
         const commonIcons = ['🪥', '🦷', '🛏️', '👕', '🧼', '🛁', '🚽', '🎒', '📚', '✏️', '🍎', '🍽️', '🧸', '🧹', '🐕', '⚽', '🎹', '🌙', '⭐', ''];
         commonIcons.forEach(ic => {
@@ -1083,7 +1144,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         taskHistory: Array.isArray(imported.taskHistory) ? imported.taskHistory : []
                     };
 
-                    // Sanitize imported tasks
                     Object.keys(state.schedules).forEach(cId => {
                         const childWeeks = state.schedules[cId] || {};
                         Object.keys(childWeeks).forEach(wKey => {
@@ -1140,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Auto-detect icon when typing task name (unless user picked an explicit icon)
+    // Auto-detect icon when typing task name
     taskNameInput.addEventListener('input', (e) => {
         const val = e.target.value;
         if (!state.isIconUserModified && val.trim().length > 1) {
@@ -1168,6 +1228,21 @@ document.addEventListener('DOMContentLoaded', function() {
     closeIconModalBtn.addEventListener('click', () => iconModal.style.display = 'none');
     iconModal.addEventListener('click', (e) => {
         if (e.target === iconModal) iconModal.style.display = 'none';
+    });
+
+    // Child Assign Presets
+    presetActiveChildOnlyBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('input[name="assignChild"]');
+        checkboxes.forEach(cb => {
+            cb.checked = (cb.value === state.activeChildId);
+        });
+    });
+
+    presetAllChildrenBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('input[name="assignChild"]');
+        checkboxes.forEach(cb => {
+            cb.checked = true;
+        });
     });
 
     // Edit modal listeners
