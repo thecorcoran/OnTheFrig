@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const TIME_BLOCKS = ['Morning', 'Lunch', 'Afternoon', 'Nighttime'];
 
-    // Early Reader Icon Categories
+    // Visual Icon Categories
     const ICON_CATEGORIES = {
         'Hygiene & Routine': [
             { icon: '🪥', label: 'Toothbrush' },
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
             { icon: '🧼', label: 'Wash Hands' },
             { icon: '🛁', label: 'Bath' },
             { icon: '🚿', label: 'Shower' },
-            { icon: '🚽', label: 'Potty' },
+            { icon: '🚽', label: 'Bathroom' },
             { icon: '🪮', label: 'Brush Hair' },
             { icon: '🌅', label: 'Wake Up' },
             { icon: '🌙', label: 'Bedtime' },
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { keywords: ['sleep', 'bedtime', 'goodnight', 'night', 'sleepy'], icon: '🌙' },
         { keywords: ['wake', 'wake up', 'morning routine', 'sunshine'], icon: '🌅' },
         { keywords: ['star', 'reward', 'prize', 'goal'], icon: '⭐' },
-        { keywords: ['quiet time', 'rest', 'nap', 'timer'], icon: '⏰' }
+        { keywords: ['quiet time', 'rest', 'nap', 'timer', 'meeting', 'work'], icon: '⏰' }
     ];
 
     // --- APPLICATION STATE ---
@@ -112,11 +112,13 @@ document.addEventListener('DOMContentLoaded', function() {
         version: 2,
         activeChildId: 'child_1',
         children: [
-            { id: 'child_1', name: "Child" }
+            { id: 'child_1', name: "Family Member" }
         ],
         selectedWeek: '', // YYYY-MM-DD (snapped to Monday)
-        activeView: 'weekly', // 'weekly' or 'early_reader'
-        selectedReaderDay: 'Monday', // Day selected in Early Reader view
+        activeView: 'weekly', // 'weekly' or 'daily'
+        calendarDateMode: 'dated', // 'dated' or 'general'
+        lastPrinted: null, // { timestamp: string, time: number }
+        selectedReaderDay: 'Monday', // Day selected in Daily View
         selectedTaskIcon: '🪥', // Current icon in task form
         isIconUserModified: false,
         schedules: {},
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteChildBtn = document.getElementById('deleteChildBtn');
 
     const viewWeeklyBtn = document.getElementById('viewWeeklyBtn');
-    const viewEarlyReaderBtn = document.getElementById('viewEarlyReaderBtn');
+    const viewDailyBtn = document.getElementById('viewDailyBtn');
     const printableArea = document.getElementById('printableArea');
     const earlyReaderView = document.getElementById('earlyReaderView');
     const printHint = document.getElementById('printHint');
@@ -169,6 +171,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayDate = document.getElementById('displayDate');
     const scheduleGrid = document.getElementById('schedule-grid-container');
     const printBtn = document.getElementById('printBtn');
+    const printStatusBanner = document.getElementById('printStatusBanner');
+    const printStatusText = document.getElementById('printStatusText');
+    const lastPrintedHint = document.getElementById('lastPrintedHint');
+    const toastNotification = document.getElementById('toastNotification');
+    const offlineStatus = document.getElementById('offlineStatus');
+    const installPwaBtn = document.getElementById('installPwaBtn');
+    const calendarDateRadios = document.querySelectorAll('input[name="calendarDateMode"]');
 
     const readerDisplayName = document.getElementById('readerDisplayName');
     const readerDisplayDate = document.getElementById('readerDisplayDate');
@@ -257,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        return '⭐'; // Default pleasant reward icon if not matched
+        return '⭐'; // Default pleasant icon
     }
 
     function setSelectedFormIcon(icon, isUserAction = true) {
@@ -278,6 +287,54 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- TOAST NOTIFICATIONS ---
+    let toastTimer = null;
+    function showToast(message, duration = 4000) {
+        if (!toastNotification) return;
+        toastNotification.textContent = message;
+        toastNotification.style.display = 'flex';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toastNotification.style.display = 'none';
+        }, duration);
+    }
+
+    // --- PRINT STATUS TRACKING ---
+    function markCalendarAsPrinted() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const formatted = `${dateStr} at ${timeStr}`;
+        state.lastPrinted = {
+            timestamp: formatted,
+            time: Date.now()
+        };
+        saveState();
+        renderPrintStatus();
+        showToast(`🖨️ Calendar printed on ${formatted}! Ready for the fridge.`);
+    }
+
+    function renderPrintStatus() {
+        if (state.lastPrinted && state.lastPrinted.timestamp) {
+            if (printStatusBanner) {
+                printStatusBanner.style.display = 'inline-flex';
+            }
+            if (printStatusText) {
+                printStatusText.textContent = `Last printed: ${state.lastPrinted.timestamp}`;
+            }
+            if (lastPrintedHint) {
+                lastPrintedHint.textContent = `✅ Last printed: ${state.lastPrinted.timestamp}`;
+            }
+        } else {
+            if (printStatusBanner) {
+                printStatusBanner.style.display = 'none';
+            }
+            if (lastPrintedHint) {
+                lastPrintedHint.textContent = '';
+            }
+        }
+    }
+
     // --- STORAGE & MIGRATION ---
     const loadState = () => {
         try {
@@ -288,10 +345,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     version: 2,
                     activeChildId: parsed.activeChildId || 'child_1',
                     children: Array.isArray(parsed.children) && parsed.children.length > 0
-                        ? parsed.children
-                        : [{ id: 'child_1', name: 'Child' }],
+                        ? parsed.children.map(c => (c.name === 'Child' ? { ...c, name: 'Family Member' } : c))
+                        : [{ id: 'child_1', name: 'Family Member' }],
                     selectedWeek: parsed.selectedWeek || getMondayIsoString(new Date()),
-                    activeView: parsed.activeView || 'weekly',
+                    activeView: (parsed.activeView === 'early_reader' || parsed.activeView === 'daily') ? 'daily' : 'weekly',
+                    calendarDateMode: parsed.calendarDateMode || 'dated',
+                    lastPrinted: parsed.lastPrinted || null,
                     selectedReaderDay: parsed.selectedReaderDay || getTodayDayName(),
                     selectedTaskIcon: '🪥',
                     isIconUserModified: false,
@@ -321,7 +380,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (rawV1) {
                 const parsedV1 = JSON.parse(rawV1);
                 const childId = 'child_1';
-                const childName = (parsedV1.childName && parsedV1.childName.trim()) || 'Child';
+                let childName = (parsedV1.childName && parsedV1.childName.trim()) || 'Family Member';
+                if (childName === 'Child') childName = 'Family Member';
                 const weekDate = parsedV1.weekDate ? getMondayIsoString(parsedV1.weekDate) : getMondayIsoString(new Date());
                 const rawTasks = Array.isArray(parsedV1.tasks) ? parsedV1.tasks : [];
                 const migratedTasks = rawTasks.map(t => ({
@@ -335,6 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     children: [{ id: childId, name: childName }],
                     selectedWeek: weekDate,
                     activeView: 'weekly',
+                    calendarDateMode: 'dated',
+                    lastPrinted: null,
                     selectedReaderDay: getTodayDayName(),
                     selectedTaskIcon: '🪥',
                     isIconUserModified: false,
@@ -355,6 +417,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fresh state fallback
         state.selectedWeek = getMondayIsoString(new Date());
         state.selectedReaderDay = getTodayDayName();
+        state.calendarDateMode = 'dated';
+        state.lastPrinted = null;
+        state.children = [{ id: 'child_1', name: 'Family Member' }];
     };
 
     const saveState = () => {
@@ -366,35 +431,35 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- STATE ACCESSORS ---
-    function getActiveChild() {
+    function getActiveMember() {
         if (!Array.isArray(state.children) || state.children.length === 0) {
-            state.children = [{ id: 'child_1', name: 'Child' }];
+            state.children = [{ id: 'child_1', name: 'Family Member' }];
             state.activeChildId = 'child_1';
         }
         return state.children.find(c => c.id === state.activeChildId) || state.children[0];
     }
 
-    function getChildWeekTasks(childId) {
-        if (!state.schedules[childId]) {
-            state.schedules[childId] = {};
+    function getMemberWeekTasks(memberId) {
+        if (!state.schedules[memberId]) {
+            state.schedules[memberId] = {};
         }
-        if (!state.schedules[childId][state.selectedWeek]) {
-            state.schedules[childId][state.selectedWeek] = [];
+        if (!state.schedules[memberId][state.selectedWeek]) {
+            state.schedules[memberId][state.selectedWeek] = [];
         }
-        return state.schedules[childId][state.selectedWeek];
+        return state.schedules[memberId][state.selectedWeek];
     }
 
     function getCurrentWeekTasks() {
-        const activeChild = getActiveChild();
-        return getChildWeekTasks(activeChild.id);
+        const activeMember = getActiveMember();
+        return getMemberWeekTasks(activeMember.id);
     }
 
     function setCurrentWeekTasks(tasks) {
-        const activeChild = getActiveChild();
-        if (!state.schedules[activeChild.id]) {
-            state.schedules[activeChild.id] = {};
+        const activeMember = getActiveMember();
+        if (!state.schedules[activeMember.id]) {
+            state.schedules[activeMember.id] = {};
         }
-        state.schedules[activeChild.id][state.selectedWeek] = tasks;
+        state.schedules[activeMember.id][state.selectedWeek] = tasks;
         saveState();
     }
 
@@ -443,13 +508,19 @@ document.addEventListener('DOMContentLoaded', function() {
             renderChildAssignChips();
             return;
         }
-        // Update active child default if only one was selected
         const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
         if (checkedCount <= 1) {
             checkboxes.forEach(cb => {
                 cb.checked = (cb.value === state.activeChildId);
             });
         }
+    }
+
+    function syncCalendarDateRadios() {
+        const mode = state.calendarDateMode || 'dated';
+        calendarDateRadios.forEach(radio => {
+            radio.checked = (radio.value === mode);
+        });
     }
 
     function updateTaskHistoryDatalist() {
@@ -463,21 +534,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Render VIEW 1: Weekly Grid
     function renderWeeklySchedule() {
-        const activeChild = getActiveChild();
+        const activeMember = getActiveMember();
         const currentTasks = getCurrentWeekTasks();
 
-        displayName.textContent = activeChild.name ? `${activeChild.name}'s Schedule` : "Child's Schedule";
-        displayDate.textContent = `Week of ${formatDate(state.selectedWeek)}`;
+        displayName.textContent = activeMember.name ? `${activeMember.name}'s Schedule` : "Family Member's Schedule";
+        
+        // Requirement 6: Display Date mode
+        if (state.calendarDateMode === 'general') {
+            displayDate.textContent = 'General Weekly Routine (Reusable)';
+        } else {
+            displayDate.textContent = `Week of ${formatDate(state.selectedWeek)}`;
+        }
         weekDateInput.value = state.selectedWeek;
 
         scheduleGrid.innerHTML = '';
 
-        DAYS.forEach(day => {
+        DAYS.forEach((day, dayIndex) => {
             const dayColumn = document.createElement('div');
             dayColumn.className = 'day-column';
             
-            const dayHeader = document.createElement('h3');
-            dayHeader.textContent = day;
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-column-header';
+
+            const dayTitle = document.createElement('h3');
+            dayTitle.textContent = day;
+            dayHeader.appendChild(dayTitle);
+
+            // Requirement 6: Add numerical date under day name if dated mode
+            if (state.calendarDateMode === 'dated') {
+                const parts = state.selectedWeek.split('-');
+                const mon = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                const dayDate = new Date(mon);
+                dayDate.setDate(mon.getDate() + dayIndex);
+                const monthShort = dayDate.toLocaleDateString('en-US', { month: 'short' });
+                
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'day-numerical-date';
+                dateSpan.textContent = `${monthShort} ${dayDate.getDate()}`;
+                dayHeader.appendChild(dateSpan);
+            }
+
             dayColumn.appendChild(dayHeader);
 
             let dayHasTasks = false;
@@ -511,12 +607,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         checkbox.title = 'Mark task completed';
                         checkbox.addEventListener('change', () => toggleTaskCompleted(task.id));
 
-                        // Icon badge for early readers
+                        // Visual icon badge
                         const taskIconSpan = document.createElement('span');
                         taskIconSpan.className = 'task-icon';
                         taskIconSpan.textContent = task.icon || '⭐';
 
-                        // Task text (with clean unfragmented wrapping)
+                        // Task text
                         const taskNameSpan = document.createElement('span');
                         taskNameSpan.className = 'task-name';
                         if (task.mustDo) {
@@ -531,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             taskNameSpan.textContent = task.name;
                         }
 
-                        // Action Buttons (Edit & Delete - overlay on hover)
+                        // Action Buttons (Edit & Delete)
                         const actionDiv = document.createElement('div');
                         actionDiv.className = 'task-item-actions no-print';
 
@@ -581,14 +677,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Render VIEW 2: Early Reader Picture Routine Board
+    // Render VIEW 2: Daily View (Picture Routine Cards)
     function renderEarlyReaderBoard() {
-        const activeChild = getActiveChild();
+        const activeMember = getActiveMember();
         const currentTasks = getCurrentWeekTasks();
         const selectedDay = state.selectedReaderDay || 'Monday';
 
-        readerDisplayName.textContent = activeChild.name ? `${activeChild.name}'s Daily Routine` : "Child's Routine";
-        readerDisplayDate.textContent = `${selectedDay} • Week of ${formatDate(state.selectedWeek)}`;
+        readerDisplayName.textContent = activeMember.name ? `${activeMember.name}'s Daily Routine` : "Family Member's Daily Routine";
+
+        // Requirement 6: Date formatting in daily view
+        if (state.calendarDateMode === 'dated') {
+            const dayIndex = DAYS.indexOf(selectedDay);
+            const parts = state.selectedWeek.split('-');
+            const mon = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const dayDate = new Date(mon);
+            dayDate.setDate(mon.getDate() + (dayIndex >= 0 ? dayIndex : 0));
+            const fullDateStr = dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            readerDisplayDate.textContent = fullDateStr;
+        } else {
+            readerDisplayDate.textContent = `${selectedDay} Routine (General)`;
+        }
 
         // Render Day Selector Tabs
         readerDaySelector.innerHTML = '';
@@ -597,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dayBtn.type = 'button';
             dayBtn.className = `reader-day-btn ${day === selectedDay ? 'active' : ''}`;
             dayBtn.textContent = day.substr(0, 3);
-            dayBtn.title = `View ${day}'s picture routine`;
+            dayBtn.title = `View ${day}'s routine`;
             dayBtn.addEventListener('click', () => {
                 state.selectedReaderDay = day;
                 saveState();
@@ -608,24 +716,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Filter tasks for selected day
         const dayTasks = currentTasks.filter(t => t.day === selectedDay);
+
         readerRoutineContainer.innerHTML = '';
 
         TIME_BLOCKS.forEach(block => {
             const blockTasks = dayTasks.filter(t => t.time === block);
 
             const blockCard = document.createElement('div');
-            blockCard.className = `reader-block-card time-${block}`;
+            blockCard.className = 'reader-block-card';
 
             const blockHeader = document.createElement('div');
             blockHeader.className = 'reader-block-header';
 
-            const blockTitle = document.createElement('h3');
             const blockIcon = block === 'Morning' ? '🌅' : block === 'Lunch' ? '🥪' : block === 'Afternoon' ? '☀️' : '🌙';
+            const blockTitle = document.createElement('h3');
             blockTitle.textContent = `${blockIcon} ${block}`;
 
             const countBadge = document.createElement('span');
             countBadge.className = 'reader-block-count';
-            countBadge.textContent = `${blockTasks.filter(t => t.completed).length}/${blockTasks.length}`;
+            countBadge.textContent = `${blockTasks.length} task${blockTasks.length === 1 ? '' : 's'}`;
 
             blockHeader.appendChild(blockTitle);
             blockHeader.appendChild(countBadge);
@@ -634,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (blockTasks.length === 0) {
                 const emptyMsg = document.createElement('div');
                 emptyMsg.className = 'reader-empty-msg';
-                emptyMsg.textContent = 'No tasks for this time';
+                emptyMsg.textContent = 'No routines scheduled for this time.';
                 blockCard.appendChild(emptyMsg);
             } else {
                 const taskCardsList = document.createElement('div');
@@ -644,26 +753,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cardItem = document.createElement('div');
                     cardItem.className = `reader-card-item ${task.completed ? 'completed' : ''}`;
 
+                    // Left: Large visual icon
                     const iconBox = document.createElement('div');
                     iconBox.className = 'reader-card-icon';
                     iconBox.textContent = task.icon || '⭐';
 
+                    // Middle: Text & Priority Tag
                     const contentBox = document.createElement('div');
                     contentBox.className = 'reader-card-content';
 
-                    const titleSpan = document.createElement('span');
-                    titleSpan.className = 'reader-task-title';
+                    const titleSpan = document.createElement('div');
+                    titleSpan.className = 'reader-card-title';
                     titleSpan.textContent = task.name;
-
                     contentBox.appendChild(titleSpan);
 
                     if (task.mustDo) {
                         const tag = document.createElement('span');
-                        tag.className = 'reader-task-tag';
-                        tag.textContent = '⭐ High Priority';
+                        tag.className = 'reader-card-tag';
+                        tag.textContent = '⭐ Priority';
                         contentBox.appendChild(tag);
                     }
 
+                    // Right: Actions (Read Aloud speaker & Checkmark)
                     const actionsBox = document.createElement('div');
                     actionsBox.className = 'reader-card-actions';
 
@@ -671,15 +782,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     speakBtn.type = 'button';
                     speakBtn.className = 'btn-speak no-print';
                     speakBtn.textContent = '🔊';
-                    speakBtn.title = 'Hear task read aloud';
+                    speakBtn.title = `Listen to "${task.name}" read aloud`;
                     speakBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        speakTask(task.name, block);
+                        speakTask(task.name, task.time);
                     });
 
-                    const checkMark = document.createElement('div');
-                    checkMark.className = 'reader-big-check';
+                    const checkMark = document.createElement('button');
+                    checkMark.type = 'button';
+                    checkMark.className = `reader-card-check ${task.completed ? 'checked' : ''}`;
                     checkMark.textContent = task.completed ? '✓' : '';
+                    checkMark.title = task.completed ? 'Completed' : 'Tap to complete';
+                    checkMark.addEventListener('click', () => {
+                        toggleTaskCompleted(task.id);
+                    });
 
                     actionsBox.appendChild(speakBtn);
                     actionsBox.appendChild(checkMark);
@@ -688,7 +804,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     cardItem.appendChild(contentBox);
                     cardItem.appendChild(actionsBox);
 
-                    cardItem.addEventListener('click', () => {
+                    // Clicking the card body also toggles completion
+                    cardItem.addEventListener('click', (e) => {
+                        if (e.target.closest('.btn-speak')) return;
                         toggleTaskCompleted(task.id);
                     });
 
@@ -703,30 +821,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Read Aloud Speech Synthesis
-    function speakTask(taskName, blockTime) {
+    function speakTask(taskName) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const textToSay = `${taskName}`;
             const utterance = new SpeechSynthesisUtterance(textToSay);
             utterance.rate = 0.9;
-            utterance.pitch = 1.1;
+            utterance.pitch = 1.05;
             window.speechSynthesis.speak(utterance);
         }
     }
 
     function switchViewMode(mode) {
-        state.activeView = mode;
+        const isDaily = (mode === 'daily' || mode === 'early_reader');
+        state.activeView = isDaily ? 'daily' : 'weekly';
         saveState();
-        if (mode === 'early_reader') {
-            viewEarlyReaderBtn.classList.add('active');
-            viewWeeklyBtn.classList.remove('active');
+
+        if (isDaily) {
+            if (viewDailyBtn) viewDailyBtn.classList.add('active');
+            if (viewWeeklyBtn) viewWeeklyBtn.classList.remove('active');
             printableArea.style.display = 'none';
             earlyReaderView.style.display = 'block';
-            printHint.textContent = "Prints today's visual picture routine card sheet for the fridge or bedroom door";
+            printHint.textContent = "Prints today's daily visual routine card sheet for the fridge or bedroom door";
             renderEarlyReaderBoard();
         } else {
-            viewWeeklyBtn.classList.add('active');
-            viewEarlyReaderBtn.classList.remove('active');
+            if (viewWeeklyBtn) viewWeeklyBtn.classList.add('active');
+            if (viewDailyBtn) viewDailyBtn.classList.remove('active');
             printableArea.style.display = 'block';
             earlyReaderView.style.display = 'none';
             printHint.textContent = "Fits cleanly onto landscape letter paper for your fridge";
@@ -737,17 +857,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderAll() {
         renderChildTabs();
         renderChildAssignChips();
+        syncCalendarDateRadios();
+        renderPrintStatus();
         updateTaskHistoryDatalist();
-        if (state.activeView === 'early_reader') {
-            switchViewMode('early_reader');
+        if (state.activeView === 'daily' || state.activeView === 'early_reader') {
+            switchViewMode('daily');
         } else {
             switchViewMode('weekly');
         }
     }
 
-    // --- CHILD PROFILE ACTIONS ---
+    // --- FAMILY MEMBER PROFILE ACTIONS ---
     function addChild() {
-        const name = prompt("Enter the child's name:");
+        const name = prompt("Enter the family member's name:");
         if (!name || !name.trim()) return;
 
         const newId = `child_${Date.now()}`;
@@ -758,25 +880,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renameChild() {
-        const activeChild = getActiveChild();
-        const newName = prompt(`Enter new name for ${activeChild.name}:`, activeChild.name);
+        const activeMember = getActiveMember();
+        const newName = prompt(`Enter new name for ${activeMember.name}:`, activeMember.name);
         if (!newName || !newName.trim()) return;
 
-        activeChild.name = newName.trim();
+        activeMember.name = newName.trim();
         saveState();
         renderAll();
     }
 
     function deleteChild() {
-        const activeChild = getActiveChild();
+        const activeMember = getActiveMember();
         if (state.children.length <= 1) {
-            alert('You must have at least one child profile.');
+            alert('You must have at least one family member profile.');
             return;
         }
 
-        if (confirm(`Are you sure you want to delete ${activeChild.name} and all their weekly schedules?`)) {
-            delete state.schedules[activeChild.id];
-            state.children = state.children.filter(c => c.id !== activeChild.id);
+        if (confirm(`Are you sure you want to delete ${activeMember.name} and all their weekly schedules?`)) {
+            delete state.schedules[activeMember.id];
+            state.children = state.children.filter(c => c.id !== activeMember.id);
             state.activeChildId = state.children[0].id;
             saveState();
             renderAll();
@@ -792,19 +914,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function jumpToCurrentWeek() {
         state.selectedWeek = getMondayIsoString(new Date());
-        state.selectedReaderDay = getTodayDayName();
         saveState();
         renderAll();
     }
 
     function copyPreviousWeekSchedule() {
-        const activeChild = getActiveChild();
+        const activeMember = getActiveMember();
         const prevWeekDate = addWeeksToIsoDate(state.selectedWeek, -1);
-        const childSchedules = state.schedules[activeChild.id] || {};
-        const prevWeekTasks = childSchedules[prevWeekDate] || [];
+        const memberSchedules = state.schedules[activeMember.id] || {};
+        const prevWeekTasks = memberSchedules[prevWeekDate] || [];
 
         if (prevWeekTasks.length === 0) {
-            alert(`No tasks found in the previous week (${formatDate(prevWeekDate)}) for ${activeChild.name}.`);
+            alert(`No tasks found in the previous week (${formatDate(prevWeekDate)}) for ${activeMember.name}.`);
             return;
         }
 
@@ -829,14 +950,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         setCurrentWeekTasks(clonedTasks);
         renderAll();
+        showToast(`📋 Copied ${clonedTasks.length} tasks from last week!`);
     }
 
     function clearThisWeek() {
-        const activeChild = getActiveChild();
+        const activeMember = getActiveMember();
         const currentTasks = getCurrentWeekTasks();
         if (currentTasks.length === 0) return;
 
-        if (confirm(`Clear all tasks for ${activeChild.name} on the week of ${formatDate(state.selectedWeek)}?`)) {
+        if (confirm(`Clear all tasks for ${activeMember.name} on the week of ${formatDate(state.selectedWeek)}?`)) {
             setCurrentWeekTasks([]);
             renderAll();
         }
@@ -859,13 +981,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function getSelectedAssignChildren() {
+    function getSelectedAssignMembers() {
         const selected = [];
         const checkboxes = document.querySelectorAll('input[name="assignChild"]');
         checkboxes.forEach(cb => {
             if (cb.checked) selected.push(cb.value);
         });
-        // Fallback to active child if none selected
         if (selected.length === 0) {
             selected.push(state.activeChildId);
         }
@@ -886,9 +1007,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const targetChildIds = getSelectedAssignChildren();
-        if (targetChildIds.length === 0) {
-            alert('Please select at least one child to assign this task to.');
+        const targetMemberIds = getSelectedAssignMembers();
+        if (targetMemberIds.length === 0) {
+            alert('Please select at least one family member to assign this task to.');
             return;
         }
 
@@ -897,14 +1018,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const icon = state.selectedTaskIcon || detectIconForTask(name);
         const isRecurring = selectedDays.length > 1;
 
-        // Add task for each selected child
-        targetChildIds.forEach((childId) => {
-            const childTasks = getChildWeekTasks(childId);
-            const recurringGroupId = isRecurring ? `rec_${Date.now()}_${childId}_${Math.random().toString(36).substr(2, 5)}` : null;
+        // Add task for each selected member
+        targetMemberIds.forEach((memberId) => {
+            const memberTasks = getMemberWeekTasks(memberId);
+            const recurringGroupId = isRecurring ? `rec_${Date.now()}_${memberId}_${Math.random().toString(36).substr(2, 5)}` : null;
 
             selectedDays.forEach((day, idx) => {
-                childTasks.push({
-                    id: `task_${Date.now()}_${childId}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+                memberTasks.push({
+                    id: `task_${Date.now()}_${memberId}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
                     name: name,
                     icon: icon,
                     day: day,
@@ -915,10 +1036,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
 
-            if (!state.schedules[childId]) {
-                state.schedules[childId] = {};
+            if (!state.schedules[memberId]) {
+                state.schedules[memberId] = {};
             }
-            state.schedules[childId][state.selectedWeek] = childTasks;
+            state.schedules[memberId][state.selectedWeek] = memberTasks;
         });
 
         if (!state.taskHistory.includes(name)) {
@@ -1048,11 +1169,10 @@ document.addEventListener('DOMContentLoaded', function() {
         task.mustDo = editIsMustDo.checked;
         task.icon = selectedIcon;
 
-        // If part of recurring group, offer to update series name/icon
         if (task.recurringGroupId) {
             const seriesTasks = currentTasks.filter(t => t.recurringGroupId === task.recurringGroupId && t.id !== task.id);
             if (seriesTasks.length > 0) {
-                const updateAll = confirm(`Update task name, time, and icon across all other recurring days this week?`);
+                const updateAll = confirm(`Update task details across all other recurring days this week?`);
                 if (updateAll) {
                     seriesTasks.forEach(st => {
                         st.name = task.name;
@@ -1134,9 +1254,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     state = {
                         version: 2,
                         activeChildId: imported.activeChildId || (imported.children && imported.children[0] && imported.children[0].id) || 'child_1',
-                        children: Array.isArray(imported.children) && imported.children.length > 0 ? imported.children : [{ id: 'child_1', name: 'Child' }],
+                        children: Array.isArray(imported.children) && imported.children.length > 0 ? imported.children : [{ id: 'child_1', name: 'Family Member' }],
                         selectedWeek: imported.selectedWeek || getMondayIsoString(new Date()),
-                        activeView: imported.activeView || 'weekly',
+                        activeView: (imported.activeView === 'early_reader' || imported.activeView === 'daily') ? 'daily' : 'weekly',
+                        calendarDateMode: imported.calendarDateMode || 'dated',
+                        lastPrinted: imported.lastPrinted || null,
                         selectedReaderDay: imported.selectedReaderDay || getTodayDayName(),
                         selectedTaskIcon: '🪥',
                         isIconUserModified: false,
@@ -1160,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     saveState();
                     renderAll();
-                    alert("Schedule data imported successfully!");
+                    showToast("✅ Schedule data imported successfully!");
                 }
             } catch (err) {
                 alert("Error importing file: " + err.message);
@@ -1175,8 +1297,12 @@ document.addEventListener('DOMContentLoaded', function() {
     renameChildBtn.addEventListener('click', renameChild);
     deleteChildBtn.addEventListener('click', deleteChild);
 
-    viewWeeklyBtn.addEventListener('click', () => switchViewMode('weekly'));
-    viewEarlyReaderBtn.addEventListener('click', () => switchViewMode('early_reader'));
+    if (viewWeeklyBtn) {
+        viewWeeklyBtn.addEventListener('click', () => switchViewMode('weekly'));
+    }
+    if (viewDailyBtn) {
+        viewDailyBtn.addEventListener('click', () => switchViewMode('daily'));
+    }
 
     prevWeekBtn.addEventListener('click', () => shiftWeek(-1));
     nextWeekBtn.addEventListener('click', () => shiftWeek(1));
@@ -1230,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === iconModal) iconModal.style.display = 'none';
     });
 
-    // Child Assign Presets
+    // Family Member Assign Presets
     presetActiveChildOnlyBtn.addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('input[name="assignChild"]');
         checkboxes.forEach(cb => {
@@ -1242,6 +1368,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll('input[name="assignChild"]');
         checkboxes.forEach(cb => {
             cb.checked = true;
+        });
+    });
+
+    // Calendar Date Mode radios
+    calendarDateRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                state.calendarDateMode = e.target.value;
+                saveState();
+                renderAll();
+            }
         });
     });
 
@@ -1276,10 +1413,66 @@ document.addEventListener('DOMContentLoaded', function() {
         setDayCheckboxes([]);
     });
 
-    printBtn.addEventListener('click', () => window.print());
+    // Print Listener & Tracking
+    printBtn.addEventListener('click', () => {
+        window.print();
+        setTimeout(() => {
+            if (!state.lastPrinted || (Date.now() - state.lastPrinted.time > 4000)) {
+                markCalendarAsPrinted();
+            }
+        }, 1200);
+    });
+
+    window.addEventListener('afterprint', () => {
+        markCalendarAsPrinted();
+    });
 
     exportDataBtn.addEventListener('click', exportBackup);
     importFileInput.addEventListener('change', importBackup);
+
+    // --- SERVICE WORKER & OFFLINE SUPPORT ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch((err) => {
+                console.log('SW registration error:', err);
+            });
+        });
+    }
+
+    function updateNetworkStatus() {
+        if (!offlineStatus) return;
+        if (navigator.onLine) {
+            offlineStatus.textContent = '📶 Offline Ready';
+            offlineStatus.className = 'offline-badge';
+            offlineStatus.title = 'Works 100% offline — all changes save automatically to your device';
+        } else {
+            offlineStatus.textContent = '⚡ Offline Mode';
+            offlineStatus.className = 'offline-badge offline-active';
+            offlineStatus.title = 'You are currently offline. All changes are saved locally to your device.';
+            showToast('⚡ Offline mode: All changes are saved locally to your device.');
+        }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    // PWA Install Prompt handling
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installPwaBtn) {
+            installPwaBtn.style.display = 'inline-flex';
+            installPwaBtn.addEventListener('click', () => {
+                installPwaBtn.style.display = 'none';
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                });
+            });
+        }
+    });
 
     // --- INITIAL STARTUP ---
     loadState();
