@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const STORAGE_KEY = 'onthefrig_schedule_data_v2';
     const OLD_STORAGE_KEY = 'onthefrig_schedule_data';
     const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const TIME_BLOCKS = ['Morning', 'Lunch', 'Afternoon', 'Nighttime'];
+    const TIME_BLOCKS = ['Morning', 'Snack', 'Lunch', 'Afternoon', 'Nighttime'];
 
     // Visual Icon Categories
     const ICON_CATEGORIES = {
@@ -158,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const quickIconsContainer = document.getElementById('quickIconsContainer');
     const openMoreIconsBtn = document.getElementById('openMoreIconsBtn');
 
-    const childAssignChipsContainer = document.getElementById('childAssignChipsContainer');
     const presetActiveChildOnlyBtn = document.getElementById('presetActiveChildOnly');
     const presetAllChildrenBtn = document.getElementById('presetAllChildren');
 
@@ -464,50 +463,80 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- RENDERING ---
-    function renderChildTabs() {
-        childTabsContainer.innerHTML = '';
-        state.children.forEach(child => {
-            const tabBtn = document.createElement('button');
-            tabBtn.type = 'button';
-            tabBtn.className = `child-tab ${child.id === state.activeChildId ? 'active' : ''}`;
-            tabBtn.textContent = child.name;
-            tabBtn.addEventListener('click', () => {
-                state.activeChildId = child.id;
-                saveState();
-                renderAll();
-                syncChildAssignChips();
-            });
-            childTabsContainer.appendChild(tabBtn);
+    function renderFamilyMemberChips() {
+        if (!childTabsContainer) return;
+
+        // Remember which member IDs were checked before re-rendering
+        const previouslyChecked = new Set();
+        const existingCheckboxes = document.querySelectorAll('input[name="assignChild"]');
+        existingCheckboxes.forEach(cb => {
+            if (cb.checked) previouslyChecked.add(cb.value);
         });
-    }
 
-    function renderChildAssignChips() {
-        childAssignChipsContainer.innerHTML = '';
-        state.children.forEach(child => {
-            const label = document.createElement('label');
-            label.className = 'child-assign-chip';
+        // Default to active member if nothing was selected
+        if (previouslyChecked.size === 0) {
+            previouslyChecked.add(state.activeChildId);
+        }
 
+        childTabsContainer.innerHTML = '';
+        state.children.forEach(member => {
+            const isViewing = (member.id === state.activeChildId);
+
+            const chip = document.createElement('div');
+            chip.className = `family-chip ${isViewing ? 'active-viewing' : ''}`;
+
+            // Checkbox for task assignment
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.name = 'assignChild';
-            checkbox.value = child.id;
-            checkbox.checked = (child.id === state.activeChildId);
+            checkbox.value = member.id;
+            checkbox.className = 'family-chip-checkbox';
+            checkbox.id = `assign_${member.id}`;
+            checkbox.checked = previouslyChecked.has(member.id);
+            checkbox.title = `Check to assign new task to ${member.name}`;
 
-            const span = document.createElement('span');
-            span.textContent = child.name;
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
 
-            label.appendChild(checkbox);
-            label.appendChild(span);
-            childAssignChipsContainer.appendChild(label);
+            // Member label & viewing badge
+            const label = document.createElement('label');
+            label.className = 'family-chip-label';
+            label.htmlFor = `assign_${member.id}`;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'family-chip-name';
+            nameSpan.textContent = member.name;
+            label.appendChild(nameSpan);
+
+            if (isViewing) {
+                const viewingBadge = document.createElement('span');
+                viewingBadge.className = 'viewing-badge';
+                viewingBadge.textContent = 'Viewing';
+                viewingBadge.title = `Currently viewing ${member.name}'s schedule`;
+                label.appendChild(viewingBadge);
+            }
+
+            // Clicking the chip background switches active schedule view to this member
+            chip.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    if (state.activeChildId !== member.id) {
+                        state.activeChildId = member.id;
+                        saveState();
+                        renderAll();
+                    }
+                }
+            });
+
+            chip.appendChild(checkbox);
+            chip.appendChild(label);
+            childTabsContainer.appendChild(chip);
         });
     }
 
     function syncChildAssignChips() {
         const checkboxes = document.querySelectorAll('input[name="assignChild"]');
-        if (checkboxes.length === 0) {
-            renderChildAssignChips();
-            return;
-        }
+        if (checkboxes.length === 0) return;
         const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
         if (checkedCount <= 1) {
             checkboxes.forEach(cb => {
@@ -587,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     timeBlockDiv.className = 'time-block';
                     
                     const blockHeader = document.createElement('h4');
-                    const blockIcon = block === 'Morning' ? '🌅' : block === 'Lunch' ? '🥪' : block === 'Afternoon' ? '☀️' : '🌙';
+                    const blockIcon = block === 'Morning' ? '🌅' : block === 'Snack' ? '🍎' : block === 'Lunch' ? '🥪' : block === 'Afternoon' ? '☀️' : '🌙';
                     blockHeader.textContent = `${blockIcon} ${block}`;
                     timeBlockDiv.appendChild(blockHeader);
 
@@ -728,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const blockHeader = document.createElement('div');
             blockHeader.className = 'reader-block-header';
 
-            const blockIcon = block === 'Morning' ? '🌅' : block === 'Lunch' ? '🥪' : block === 'Afternoon' ? '☀️' : '🌙';
+            const blockIcon = block === 'Morning' ? '🌅' : block === 'Snack' ? '🍎' : block === 'Lunch' ? '🥪' : block === 'Afternoon' ? '☀️' : '🌙';
             const blockTitle = document.createElement('h3');
             blockTitle.textContent = `${blockIcon} ${block}`;
 
@@ -855,8 +884,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderAll() {
-        renderChildTabs();
-        renderChildAssignChips();
+        renderFamilyMemberChips();
         syncCalendarDateRadios();
         renderPrintStatus();
         updateTaskHistoryDatalist();

@@ -64,12 +64,11 @@ OnTheFrig/
 ## How to Use
 
 1. **Open the App:** Open `index.html` in your web browser (or install as a PWA).
-2. **Select or Add a Family Member:** Click a tab or click `+ Add Family Member`.
+2. **Select or Assign Family Members:** Located right above the Task Name. Click any member's name to view their schedule, or check boxes to assign tasks (with quick presets for `Active Only` or `👥 Whole Family`).
 3. **Add Tasks:**
    * Enter the task name.
-   * Select one or more days directly underneath (or click `Weekdays`, `Weekends`, or `All 7 Days`).
-   * Select Time of Day (Morning, Lunch, Afternoon, Nighttime).
-   * Check *"Must be done (High Priority ⭐)"* if needed, then click **"+ Add Task"** directly beside it.
+   * Choose days on the left and Time of Day on the right (**Morning**, **Snack**, **Lunch**, **Afternoon**, **Nighttime**).
+   * Check *"Must be done (High Priority ⭐)"* if needed, and click **"+ Add Task"** directly beside it.
 4. **Toggle View:**
    * **📅 Weekly Grid:** 7-day overview.
    * **📋 Daily View:** Daily routine picture cards with audio read-aloud.

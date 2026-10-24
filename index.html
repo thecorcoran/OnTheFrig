@@ -36,24 +36,7 @@
                 </div>
             </div>
 
-            <!-- 1. Family Member Selection / Profile Management -->
-            <div class="child-management-section">
-                <div class="section-header">
-                    <label class="section-label">Select Family Member:</label>
-                    <div class="child-actions">
-                        <button type="button" id="addChildBtn" class="btn-link">+ Add Family Member</button>
-                        <button type="button" id="renameChildBtn" class="btn-link" title="Rename currently selected family member">✏️ Rename</button>
-                        <button type="button" id="deleteChildBtn" class="btn-link text-danger" title="Remove currently selected family member">🗑️ Delete</button>
-                    </div>
-                </div>
-                <div class="child-tabs" id="childTabsContainer">
-                    <!-- Dynamically populated family member tabs -->
-                </div>
-            </div>
-
-            <hr class="divider">
-
-            <!-- 2. Week Navigation & History Controls -->
+            <!-- 1. Week Navigation & History Controls -->
             <div class="week-navigation-section">
                 <div class="week-nav-controls">
                     <button type="button" id="prevWeekBtn" class="btn-nav" title="View previous week">◀ Prev Week</button>
@@ -75,8 +58,28 @@
 
             <hr class="divider">
 
-            <!-- 3. Task Creation Form -->
+            <!-- 2. Task Creation & Family Member Form -->
             <div class="task-form">
+                <!-- Combined Family Member Selection & Assignment Row (Positioned right above Task Name) -->
+                <div class="family-member-section">
+                    <div class="section-header">
+                        <div class="family-label-group">
+                            <label class="section-label">Family Member(s):</label>
+                            <span class="family-hint">Click name to view schedule • Check box to assign tasks</span>
+                        </div>
+                        <div class="family-actions">
+                            <button type="button" class="btn-preset" id="presetActiveChildOnly" title="Assign task to currently viewed member only">Active Only</button>
+                            <button type="button" class="btn-preset" id="presetAllChildren" title="Assign task to all family members">👥 Whole Family</button>
+                            <button type="button" id="addChildBtn" class="btn-link">+ Add Member</button>
+                            <button type="button" id="renameChildBtn" class="btn-link" title="Rename currently selected family member">✏️ Rename</button>
+                            <button type="button" id="deleteChildBtn" class="btn-link text-danger" title="Remove currently selected family member">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div class="family-chips-container" id="childTabsContainer">
+                        <!-- Dynamically populated family member chips -->
+                    </div>
+                </div>
+
                 <!-- Task Name Row -->
                 <div class="form-row-task-name">
                     <div class="form-group flex-full">
@@ -86,48 +89,53 @@
                     </div>
                 </div>
 
-                <!-- Requirement 3: Day selection row directly under Task Name field -->
-                <div class="day-selection-section">
-                    <label class="section-label">Select Day(s) for this Task:</label>
-                    
-                    <div class="day-chips" id="dayChipsContainer">
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Monday" checked><span>Mon</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Tuesday"><span>Tue</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Wednesday"><span>Wed</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Thursday"><span>Thu</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Friday"><span>Fri</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Saturday"><span>Sat</span></label>
-                        <label class="day-chip"><input type="checkbox" name="taskDay" value="Sunday"><span>Sun</span></label>
+                <!-- Days and Time Row (Time of Day dropdown is to the right of Select Day(s)) -->
+                <div class="days-and-time-row">
+                    <!-- Left: Select Day(s) for this Task -->
+                    <div class="day-selection-section">
+                        <label class="section-label">Select Day(s) for this Task:</label>
+                        
+                        <div class="day-chips" id="dayChipsContainer">
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Monday" checked><span>Mon</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Tuesday"><span>Tue</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Wednesday"><span>Wed</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Thursday"><span>Thu</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Friday"><span>Fri</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Saturday"><span>Sat</span></label>
+                            <label class="day-chip"><input type="checkbox" name="taskDay" value="Sunday"><span>Sun</span></label>
+                        </div>
+
+                        <div class="day-presets">
+                            <span class="preset-label">Quick select:</span>
+                            <button type="button" class="btn-preset" id="presetWeekdays">Weekdays (Mon-Fri)</button>
+                            <button type="button" class="btn-preset" id="presetWeekends">Weekends (Sat-Sun)</button>
+                            <button type="button" class="btn-preset" id="presetEveryday">All 7 Days</button>
+                            <button type="button" class="btn-preset" id="presetClearDays">Clear Days</button>
+                        </div>
                     </div>
 
-                    <div class="day-presets">
-                        <span class="preset-label">Quick select:</span>
-                        <button type="button" class="btn-preset" id="presetWeekdays">Weekdays (Mon-Fri)</button>
-                        <button type="button" class="btn-preset" id="presetWeekends">Weekends (Sat-Sun)</button>
-                        <button type="button" class="btn-preset" id="presetEveryday">All 7 Days</button>
-                        <button type="button" class="btn-preset" id="presetClearDays">Clear Days</button>
+                    <!-- Right: Time of Day Dropdown (includes Snack) -->
+                    <div class="time-selection-section">
+                        <div class="form-group time-group">
+                            <label for="timeOfDay">Time of Day:</label>
+                            <select id="timeOfDay">
+                                <option value="Morning">🌅 Morning</option>
+                                <option value="Snack">🍎 Snack</option>
+                                <option value="Lunch">🥪 Lunch</option>
+                                <option value="Afternoon">☀️ Afternoon</option>
+                                <option value="Nighttime">🌙 Nighttime</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Requirement 1: Time of Day, Priority, and + Add Task button to the right of Must be done -->
-                <div class="task-timing-priority-row">
-                    <div class="form-group time-group">
-                        <label for="timeOfDay">Time of Day:</label>
-                        <select id="timeOfDay">
-                            <option value="Morning">🌅 Morning</option>
-                            <option value="Lunch">🥪 Lunch</option>
-                            <option value="Afternoon">☀️ Afternoon</option>
-                            <option value="Nighttime">🌙 Nighttime</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group priority-add-group">
-                        <label class="checkbox-label" for="isMustDo" title="Highlight this task as high priority">
-                            <input type="checkbox" id="isMustDo">
-                            <span>Must be done (High Priority ⭐)</span>
-                        </label>
-                        <button type="button" id="addTaskBtn" class="btn-primary">+ Add Task</button>
-                    </div>
+                <!-- Priority Checkbox and + Add Task button to its right -->
+                <div class="priority-and-add-row">
+                    <label class="checkbox-label" for="isMustDo" title="Highlight this task as high priority">
+                        <input type="checkbox" id="isMustDo">
+                        <span>Must be done (High Priority ⭐)</span>
+                    </label>
+                    <button type="button" id="addTaskBtn" class="btn-primary">+ Add Task</button>
                 </div>
 
                 <!-- Visual Icon Selection -->
@@ -172,29 +180,10 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Family Member Assignment Section -->
-                <div class="child-assign-section" id="childAssignSection">
-                    <div class="assign-header">
-                        <label class="section-label">
-                            Assign Task To:
-                            <span class="icon-hint">Add this task to one person or the whole family simultaneously</span>
-                        </label>
-                        <div class="child-assign-presets">
-                            <button type="button" class="btn-preset" id="presetActiveChildOnly">Active Member Only</button>
-                            <button type="button" class="btn-preset" id="presetAllChildren">👥 Whole Family</button>
-                        </div>
-                    </div>
-                    <div class="child-assign-chips" id="childAssignChipsContainer">
-                        <!-- Dynamically populated checkboxes for each family member -->
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- Requirement 2: View Mode Switcher directly above the schedule -->
-        <!-- Requirement 6: Calendar Date Mode Radio Toggle -->
-        <!-- Requirement 7: Printed indicator -->
+        <!-- View Mode Switcher & Calendar Options directly above the schedule -->
         <div class="schedule-top-bar no-print">
             <div class="schedule-top-left">
                 <div class="view-mode-toggle" role="tablist" aria-label="Schedule View Modes">
@@ -202,7 +191,7 @@
                     <button type="button" id="viewDailyBtn" class="btn-mode" title="Switch to Daily View">📋 Daily View</button>
                 </div>
 
-                <!-- Requirement 6: Radio buttons for numerical date vs general non-date schedule -->
+                <!-- Radio buttons for numerical date vs general non-date schedule -->
                 <div class="calendar-date-mode-toggle" title="Choose whether calendar columns display specific dates or a reusable generic schedule">
                     <span class="mode-label">Calendar Dates:</span>
                     <label class="date-mode-radio">
@@ -216,7 +205,7 @@
                 </div>
             </div>
 
-            <!-- Requirement 7: Print status banner -->
+            <!-- Print status banner -->
             <div id="printStatusBanner" class="print-status-banner" style="display: none;" title="Print activity status">
                 <span class="print-status-icon">🖨️</span>
                 <span id="printStatusText">Last printed: Today</span>
@@ -295,6 +284,7 @@
                     <label for="editTimeOfDay">Time of Day:</label>
                     <select id="editTimeOfDay">
                         <option value="Morning">🌅 Morning</option>
+                        <option value="Snack">🍎 Snack</option>
                         <option value="Lunch">🥪 Lunch</option>
                         <option value="Afternoon">☀️ Afternoon</option>
                         <option value="Nighttime">🌙 Nighttime</option>
